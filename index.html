@@ -80,6 +80,7 @@
       <span><span class="dot" id="d-net"></span>Network</span><span id="s-net">—</span>
       <span><span class="dot ok"></span>Input</span><span id="s-tok">0 tokens (est.)</span>
     </div>
+    <p class="hint" id="reqhint" hidden>On-device needs Chrome 139+ desktop, <b>≥22 GB free disk</b> on the volume with your Chrome profile, and &gt;4 GB GPU VRAM (or 16 GB RAM). If the download never finishes, free up disk space; check chrome://on-device-internals.</p>
     <p class="hint">Auto routing: inputs under ~6k tokens run on-device if Gemini Nano is present (private, free, offline);
     larger inputs or browsers without the model go to Gemini in the cloud. The badge on every result shows which path answered.</p>
   </section>
@@ -129,6 +130,7 @@ const engine = createEngine({ initializeApp, getAI, getGenerativeModel, GoogleAI
 function setDot(id, cls, text){ const d=$("d-"+id); d.className="dot "+cls; $("s-"+id).textContent=text; }
 async function refreshStatus(){
   const a = await engine.availability();
+  $("reqhint").hidden = (a==="available");
   if (a==="available") setDot("dev","ok","Gemini Nano ready (Chrome Prompt API)");
   else if (a==="downloadable") { setDot("dev","warn","model downloadable — click “Download on-device model”"); $("warm").hidden=false; }
   else if (a==="downloading") { setDot("dev","warn","Gemini Nano downloading in the background (first time only, a few minutes)…"); $("warm").hidden=true; }
