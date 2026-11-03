@@ -47,3 +47,8 @@ repos via a user-supplied token kept in the browser.
 Live: https://arnavjhajharia.github.io/shipcopy/   Repo: https://github.com/arnavjhajharia/shipcopy
 Demo video script: 0) type sindresorhus/ky → Import changes (80 real commits, v2.1.0 → v2.2.0) 1) load sample → Auto → ⚡ on-device badge (offline toggle to prove it) 2) paste a huge changelog →
 ☁ cloud badge with the "exceeds on-device budget" reason 3) switch to Cloud only / On-device only.
+
+## Demo video (strategist s34, 2026-11-03)
+BUILT: demo/shipcopy-demo.mp4 (45 s, 1080p, captioned, shot from the live app). Hosted: https://arnavjhajharia.github.io/shipcopy/demo/shipcopy-demo.mp4
+Devpost needs a YouTube/Vimeo URL: upload this file as Unlisted/Public, titled "ShipCopy: hybrid on-device + cloud launch copy (Firebase AI Logic) #BuildHybridAI", and paste the link.
+Gap: the on-device ⚡ path is not filmed (this Mac lacks the disk for Gemini Nano). Re-shoot on a Nano-ready machine if possible. Details in demo/README.md.
