@@ -11,6 +11,10 @@ cloud Gemini fallback for big inputs / browsers without the model. Every result 
 Why hybrid is honest here: pre-release changelogs are private (unreleased features, internal ticket IDs). On-device keeps
 them local, free and offline; cloud only when needed (>~6k tokens or no Nano).
 
+## List this project
+
+One-line: **Changelog → App Store What's New, release notes & launch copy; hybrid on-device/cloud AI.** https://arnavjhajharia.github.io/shipcopy/ · https://github.com/arnavjhajharia/shipcopy · Guide: https://arnavjhajharia.github.io/shipcopy/whats-new-from-changelog/
+
 ## Files
 - index.html — UI (Ship Kit theme + footer). Loads Firebase 13.2.0 ESM from gstatic CDN (no build step).
 - hybrid.js — `chooseRoute()` (pure routing policy) + `createEngine()` (Firebase AI wrapper, SDK injected).
