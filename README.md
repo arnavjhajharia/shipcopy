@@ -14,8 +14,9 @@ them local, free and offline; cloud only when needed (>~6k tokens or no Nano).
 ## Files
 - index.html — UI (Ship Kit theme + footer). Loads Firebase 13.2.0 ESM from gstatic CDN (no build step).
 - hybrid.js — `chooseRoute()` (pure routing policy) + `createEngine()` (Firebase AI wrapper, SDK injected).
+- github.js — `importSinceLastRelease()`: public GitHub repo → commits since the latest release tag (fetch injected; `?repo=owner/repo` deep link).
 - firebase-config.js — `null` until the owner pastes the web config (cloud path). On-device still works without it.
-- test/router.test.mjs — `node --test test/` (15 tests: routing matrix, JSON parsing, engine with mocked SDK).
+- test/router.test.mjs — `node --test test/` (24 tests: routing matrix, JSON parsing, engine with mocked SDK, GitHub importer with mocked fetch).
 
 ## Judging criteria (from the Devpost page) → how we hit them
 - Technological implementation / hybrid use: real SDK modes, inferenceSource badge, download warm-up, structured JSON on both paths.

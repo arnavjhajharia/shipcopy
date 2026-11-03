@@ -61,7 +61,14 @@
       <div><label>Product</label><input id="product" placeholder="e.g. Pocket Budget for iOS" value=""></div>
       <div><label>Version</label><input id="version" placeholder="e.g. 2.4.0" value=""></div>
     </div>
-    <label>Raw changelog / git log / notes</label>
+    <label for="repo">Import from GitHub (optional)</label>
+    <div class="row" style="align-items:stretch">
+      <div style="flex:3"><input id="repo" placeholder="owner/repo or github.com URL — public repos" autocomplete="off" spellcheck="false"></div>
+      <div style="flex:1;min-width:120px"><input id="since" placeholder="since tag (auto)" autocomplete="off" spellcheck="false"></div>
+      <button class="btn sec" id="import" style="flex:0 0 auto">Import changes</button>
+    </div>
+    <p class="hint" id="importmsg" hidden></p>
+    <label for="src">Raw changelog / git log / notes</label>
     <textarea id="src" placeholder="- fix crash when importing CSV with BOM&#10;- add dark mode (follows system)&#10;- feat: recurring transactions&#10;- perf: 2x faster sync&#10;- chore: bump deps"></textarea>
     <div class="row">
       <div><label>Tone</label><select id="tone"><option>friendly</option><option>plain</option><option>playful</option><option>technical</option></select></div>
@@ -110,6 +117,7 @@ import { getAI, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js";
 import { createEngine, estimateTokens } from "./hybrid.js";
 import { firebaseConfig } from "./firebase-config.js";
+import { importSinceLastRelease } from "./github.js";
 
 const $ = id => document.getElementById(id);
 const FIELDS = [
@@ -159,6 +167,29 @@ chore: bump deps, migrate to Swift 6 strict concurrency
 PB-412: widgets now show the current month instead of last synced month`;
   updateTok();
 };
+function importMsg(html, bad){ const m=$("importmsg"); m.innerHTML=html; m.style.color=bad?"var(--bad)":""; m.hidden=false; }
+async function doImport(){
+  const btn=$("import"); if(!$("repo").value.trim()){ importMsg("Type a public repo, e.g. <code>sindresorhus/ky</code>.",true); return; }
+  btn.disabled=true; btn.textContent="Importing…";
+  try {
+    const r=await importSinceLastRelease($("repo").value,{sinceTag:$("since").value});
+    if(!r.lines.length){ importMsg(`No user-facing commits found in that range${r.base?" (since the latest release)":""}. Try an older tag in “since tag”.`,true); }
+    else {
+      $("src").value=r.changelog;
+      if(!$("product").value.trim()) $("product").value=r.product;
+      if(r.version) $("version").value=r.version;
+      const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+      const range=r.base?`<b>${esc(r.base)}</b> → <b>${esc(r.head)}</b>`:`the last ${r.lines.length} commits on <b>${esc(r.branch)}</b> (no tags yet)`;
+      importMsg(`Imported ${r.lines.length} change${r.lines.length>1?"s":""} from ${esc(r.owner+"/"+r.repo)}, ${range}${r.truncated?`  (newest ${r.lines.length} kept; ${r.total} commits in range)`:""}. Edit freely before generating; the writer leaves out chores and ticket IDs. Only the public commit list is read from GitHub; the copy is still written on-device when Gemini Nano is available.`);
+      updateTok();
+    }
+  } catch(e){ importMsg(e.message.replace(/[&<>]/g,""),true); }
+  btn.disabled=false; btn.textContent="Import changes";
+}
+$("import").onclick=doImport;
+["repo","since"].forEach(id=>$(id).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); doImport(); } }));
+{ const q=new URLSearchParams(location.search).get("repo"); if(q){ $("repo").value=q; doImport(); } }
+
 $("warm").onclick=async()=>{
   $("warm").disabled=true; $("prog").hidden=false;
   $("prog").removeAttribute("value"); // indeterminate until Chrome reports progress
