@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ShipCopy — release notes, What's New, launch tweet & meta description from your raw changelog (on-device AI)</title>
+<meta name="description" content="Paste your git log or changelog. ShipCopy writes the App Store What's New, release notes, launch post and meta description — on-device with Gemini Nano when available, cloud fallback via Firebase AI Logic.">
+<meta property="og:title" content="ShipCopy — turn a raw changelog into launch copy, privately">
+<meta property="og:description" content="Hybrid on-device / cloud AI (Firebase AI Logic). Your unreleased changelog never leaves the browser when the on-device model is available.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c5cff'/%3E%3Cpath d='M18 40l14-22 14 22-14-6z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#0d0d14;--panel:#15151f;--line:#2a2a3a;--text:#e9e9f2;--muted:#9a9ab0;--acc:#7c5cff;--acc2:#19d3c5;--warn:#f5b84b;--bad:#ff6b6b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  a{color:var(--acc)}
+  header{max-width:1100px;margin:0 auto;padding:36px 20px 10px}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:-.02em}
+  h1 span{color:var(--acc)}
+  .sub{color:var(--muted);max-width:720px}
+  main{max-width:1100px;margin:0 auto;padding:10px 20px 40px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media (max-width:860px){main{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 6px}
+  input,textarea,select{width:100%;background:#0f0f18;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit}
+  textarea{min-height:230px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+  .row>div{flex:1;min-width:140px}
+  .btn{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:11px 16px;font:inherit;font-weight:600;cursor:pointer}
+  .btn.sec{background:#20202e;color:var(--text)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .status{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;color:var(--muted);margin-top:14px}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:#555}
+  .dot.ok{background:var(--acc2)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+  .badge{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;border:1px solid var(--line);background:#0f0f18}
+  .badge.device{color:var(--acc2);border-color:rgba(25,211,197,.4)} .badge.cloud{color:#8ab4ff;border-color:rgba(138,180,255,.4)}
+  .badge small{font-weight:400;color:var(--muted)}
+  .card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:12px;background:#10101a}
+  .card h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .card h3 em{font-style:normal;color:var(--muted);font-weight:400;font-size:12px}
+  .card pre{white-space:pre-wrap;margin:0;font:14px/1.5 inherit;color:#d7d7e6}
+  .copy{font-size:12px;padding:5px 9px}
+  .over{color:var(--bad)}
+  .err{color:var(--bad);margin-top:12px;font-size:14px}
+  .hint{font-size:13px;color:var(--muted);margin-top:8px}
+  .empty{color:var(--muted);padding:26px 0;text-align:center}
+  progress{width:100%;height:8px}
+  footer{max-width:900px;margin:40px auto 24px;padding:0 20px 18px;text-align:center;font:14px/1.6 system-ui,sans-serif;color:#9a9ab0}
+</style>
+</head>
+<body>
+<header>
+  <h1><span>Ship</span>Copy</h1>
+  <p class="sub">Paste your raw changelog, git log or scribbled notes. Get the App Store <b>What's New</b>, release notes,
+  a launch post and a meta description — written <b>on your device</b> when Chrome's built-in Gemini Nano is available,
+  with a transparent cloud fallback via <b>Firebase AI Logic</b>. Unreleased features stay private.</p>
+</header>
+<main>
+  <section class="panel">
+    <div class="row">
+      <div><label>Product</label><input id="product" placeholder="e.g. Pocket Budget for iOS" value=""></div>
+      <div><label>Version</label><input id="version" placeholder="e.g. 2.4.0" value=""></div>
+    </div>
+    <label>Raw changelog / git log / notes</label>
+    <textarea id="src" placeholder="- fix crash when importing CSV with BOM&#10;- add dark mode (follows system)&#10;- feat: recurring transactions&#10;- perf: 2x faster sync&#10;- chore: bump deps"></textarea>
+    <div class="row">
+      <div><label>Tone</label><select id="tone"><option>friendly</option><option>plain</option><option>playful</option><option>technical</option></select></div>
+      <div><label>Platform</label><select id="platform"><option>iOS App Store</option><option>Google Play</option><option>Web / SaaS</option><option>npm / CLI</option></select></div>
+      <div><label>Inference</label><select id="policy"><option value="auto">Auto (hybrid)</option><option value="device">On-device only</option><option value="cloud">Cloud only</option></select></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="go">Generate launch copy</button>
+      <button class="btn sec" id="sample">Load sample</button>
+      <button class="btn sec" id="warm" hidden>Download on-device model</button>
+    </div>
+    <progress id="prog" value="0" max="1" hidden></progress>
+    <div class="status">
+      <span><span class="dot" id="d-dev"></span>On-device</span><span id="s-dev">checking…</span>
+      <span><span class="dot" id="d-cloud"></span>Cloud</span><span id="s-cloud">checking…</span>
+      <span><span class="dot" id="d-net"></span>Network</span><span id="s-net">—</span>
+      <span><span class="dot ok"></span>Input</span><span id="s-tok">0 tokens (est.)</span>
+    </div>
+    <p class="hint">Auto routing: inputs under ~6k tokens run on-device if Gemini Nano is present (private, free, offline);
+    larger inputs or browsers without the model go to Gemini in the cloud. The badge on every result shows which path answered.</p>
+  </section>
+  <section class="panel" id="out">
+    <div id="badgewrap" hidden><span class="badge" id="badge"></span></div>
+    <div class="empty" id="empty">Results appear here. Each block has its own copy button and character budget.</div>
+    <div id="cards"></div>
+    <div class="err" id="err" hidden></div>
+  </section>
+</main>
+<footer>
+  <div style="margin-bottom:14px">100% client-side app. On-device runs never leave your browser; cloud runs go to Gemini through Firebase AI Logic. No tracking, no server of ours.
+  <a href="https://github.com/arnavjhajharia/shipcopy">Source</a>.</div>
+  <div style="padding-top:18px;border-top:1px solid rgba(140,140,160,.25)">
+    <div style="font-weight:700;color:#c3c3d6;margin-bottom:4px">More free tools in The Ship Kit</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;margin-bottom:10px">
+      <a href="https://arnavjhajharia.github.io/favikit/" style="color:#7c5cff;text-decoration:none">Favikit — favicons &amp; app icons</a>
+      <a href="https://arnavjhajharia.github.io/appshot/" style="color:#7c5cff;text-decoration:none">AppShot — app-store screenshots</a>
+      <a href="https://arnavjhajharia.github.io/ogkit/" style="color:#7c5cff;text-decoration:none">ogkit — OG / social-card images</a>
+    </div>
+    <div><a href="https://bharatankh.gumroad.com/l/meshgrain" style="color:#19d3c5;text-decoration:none;font-weight:600">★ 100 mesh-gradient backgrounds + 8 grain overlays →</a></div>
+  </div>
+</footer>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-ai.js";
+import { createEngine, estimateTokens } from "./hybrid.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const $ = id => document.getElementById(id);
+const FIELDS = [
+  ["whatsNew", "What's New (store listing)", 500],
+  ["releaseNotes", "Release notes (markdown)", 1200],
+  ["launchPost", "Launch post (X / Mastodon / LinkedIn)", 280],
+  ["metaDescription", "Meta / OG description", 155],
+];
+const SYSTEM = `You write concise launch copy for software releases. You are given a product name, version, platform, tone and a RAW changelog (git log lines, bullets, notes). Output ONLY a JSON object with these string fields:
+- whatsNew: user-facing "What's New" for the store listing, 2-5 short bullets as plain lines starting with "•", no internal jargon (no "chore", "bump deps", ticket IDs). Under 500 characters.
+- releaseNotes: markdown with headings "### New", "### Improved", "### Fixed" (omit empty ones), one line per item. Under 1200 characters.
+- launchPost: a single social post under 280 characters, no hashtags spam (max 2), mention the version.
+- metaDescription: one sentence under 155 characters describing the release for a web page.
+Never invent features that are not in the changelog. Keep the requested tone.`;
+const SCHEMA = { type: "object", properties: Object.fromEntries(FIELDS.map(([k]) => [k, { type: "string" }])), required: FIELDS.map(([k]) => k) };
+
+const engine = createEngine({ initializeApp, getAI, getGenerativeModel, GoogleAIBackend }, { config: firebaseConfig, systemPrompt: SYSTEM, jsonSchema: SCHEMA });
+
+function setDot(id, cls, text){ const d=$("d-"+id); d.className="dot "+cls; $("s-"+id).textContent=text; }
+async function refreshStatus(){
+  const a = await engine.availability();
+  if (a==="available") setDot("dev","ok","Gemini Nano ready (Chrome Prompt API)");
+  else if (a==="downloadable") { setDot("dev","warn","model downloadable — click “Download on-device model”"); $("warm").hidden=false; }
+  else if (a==="downloading") { setDot("dev","warn","model downloading…"); }
+  else setDot("dev","bad","not available in this browser (Chrome 139+ desktop with built-in AI)");
+  if (engine.cloudConfigured) setDot("cloud","ok","Firebase AI Logic → Gemini (fallback)");
+  else setDot("cloud","bad","not configured (firebase-config.js) — on-device only");
+  setDot("net", navigator.onLine?"ok":"warn", navigator.onLine?"online":"offline (on-device still works)");
+  return a;
+}
+function buildPrompt(){
+  return `Product: ${$("product").value.trim()||"(unnamed)"}\nVersion: ${$("version").value.trim()||"(unspecified)"}\nPlatform: ${$("platform").value}\nTone: ${$("tone").value}\n\nRAW CHANGELOG:\n${$("src").value.trim()}`;
+}
+function updateTok(){ $("s-tok").textContent = `${estimateTokens(buildPrompt())+estimateTokens(SYSTEM)} tokens (est.)`; }
+["src","product","version"].forEach(id=>$(id).addEventListener("input",updateTok));
+window.addEventListener("online",refreshStatus); window.addEventListener("offline",refreshStatus);
+
+$("sample").onclick=()=>{
+  $("product").value="Pocket Budget"; $("version").value="2.4.0"; $("platform").value="iOS App Store";
+  $("src").value=`feat: recurring transactions (weekly/monthly) with skip + pause
+feat: dark mode, follows system setting
+fix: crash when importing a CSV that starts with a BOM
+fix: wrong currency symbol for CHF accounts
+perf: iCloud sync is ~2x faster on large ledgers (batched writes)
+chore: bump deps, migrate to Swift 6 strict concurrency
+PB-412: widgets now show the current month instead of last synced month`;
+  updateTok();
+};
+$("warm").onclick=async()=>{
+  $("warm").disabled=true; $("prog").hidden=false;
+  try { await engine.warmup(p=>{ $("prog").value=p; setDot("dev","warn",`downloading model… ${Math.round(p*100)}%`); }); }
+  catch(e){ showErr("Model download failed: "+e.message); }
+  $("prog").hidden=true; $("warm").hidden=true; refreshStatus();
+};
+function showErr(m){ $("err").textContent=m; $("err").hidden=false; }
+function render(r){
+  $("empty").hidden=true; $("err").hidden=true;
+  const b=$("badge"); b.className="badge "+(r.backend==="on-device"?"device":"cloud");
+  b.innerHTML=(r.backend==="on-device"?"⚡ on-device · Gemini Nano":"☁ cloud · Gemini via Firebase AI Logic")+` <small>${r.ms} ms · ${r.route.reason}</small>`;
+  $("badgewrap").hidden=false;
+  const c=$("cards"); c.innerHTML="";
+  if(!r.data){ const d=document.createElement("div"); d.className="card"; d.innerHTML=`<h3>Raw output <em>(could not parse JSON: ${r.parseError})</em></h3><pre></pre>`; d.querySelector("pre").textContent=r.text; c.appendChild(d); return; }
+  for(const [k,title,limit] of FIELDS){
+    const v=(r.data[k]??"").toString().trim(); const over=v.length>limit;
+    const d=document.createElement("div"); d.className="card";
+    d.innerHTML=`<h3><span>${title}</span><span><em class="${over?"over":""}">${v.length}/${limit}</em> <button class="btn sec copy">Copy</button></span></h3><pre></pre>`;
+    d.querySelector("pre").textContent=v;
+    d.querySelector(".copy").onclick=ev=>{navigator.clipboard.writeText(v); ev.target.textContent="Copied ✓"; setTimeout(()=>ev.target.textContent="Copy",1200);};
+    c.appendChild(d);
+  }
+  const og=document.createElement("p"); og.className="hint"; og.innerHTML=`Need the matching social image? <a href="https://arnavjhajharia.github.io/ogkit/" target="_blank" rel="noopener">Make the OG card in ogkit →</a>`; c.appendChild(og);
+}
+$("go").onclick=async()=>{
+  if(!$("src").value.trim()){ showErr("Paste a changelog first (or click “Load sample”)."); return; }
+  $("go").disabled=true; $("go").textContent="Generating…"; $("err").hidden=true;
+  try { const r=await engine.generate(buildPrompt(),{policy:$("policy").value}); render(r); console.log("[ShipCopy]",r.backend,r.route,r.ms+"ms"); }
+  catch(e){ showErr(e.message); console.warn("[ShipCopy] generate failed",e); }
+  $("go").disabled=false; $("go").textContent="Generate launch copy"; refreshStatus();
+};
+updateTok(); refreshStatus();
+window.__shipcopy={engine,refreshStatus};
+</script>
+</body>
+</html>
