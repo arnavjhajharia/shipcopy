@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>App Store &quot;What&apos;s New&quot; from a changelog: template + generator (2026)</title>
+<meta name="description" content="How to turn a git log or release notes into App Store What's New text (4000 char limit), markdown release notes, and a launch post. Free browser tool with optional on-device AI.">
+<link rel="canonical" href="https://arnavjhajharia.github.io/shipcopy/whats-new-from-changelog/">
+<meta property="og:title" content="What's New text from your changelog">
+<meta property="og:description" content="Structure, limits, and a free tool that drafts store copy from raw commits.">
+<meta property="og:url" content="https://arnavjhajharia.github.io/shipcopy/whats-new-from-changelog/">
+<meta property="og:type" content="article">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is the App Store What's New character limit?","acceptedAnswer":{"@type":"Answer","text":"4000 characters for the What's New field in App Store Connect. Lead with user-visible changes; skip internal refactors unless they fix something users noticed."}},{"@type":"Question","name":"Should What's New match release notes?","acceptedAnswer":{"@type":"Answer","text":"Same facts, different tone: What's New is short and benefit-first for store browsers; release notes can be markdown with links and ticket IDs for your site or GitHub."}},{"@type":"Question","name":"Can I paste my git log directly?","acceptedAnswer":{"@type":"Answer","text":"Yes, but edit commit subjects into plain language first, or use a tool that summarizes commits into bullet points before you paste into App Store Connect."}}]}</script>
+<style>
+:root{--bg:#0d0e14;--fg:#e9e9f2;--muted:#9a9ab0;--line:#262838;--acc:#7c5cff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 -apple-system,Segoe UI,Helvetica,Arial,sans-serif}
+main{max-width:760px;margin:0 auto;padding:40px 22px 60px}a{color:var(--acc)}
+h1{font-size:34px;line-height:1.2;margin:0 0 10px}h2{font-size:24px;margin:38px 0 10px}
+.lead{color:var(--muted);margin:0 0 26px}pre{background:#161826;border:1px solid var(--line);border-radius:8px;padding:14px;overflow:auto;font-size:14px}
+.cta{display:inline-block;background:var(--acc);color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:10px;margin:8px 0}
+.box{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#12131c;margin:22px 0}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:48px;padding-top:16px}
+</style></head><body><main>
+<p style="margin:0 0 18px;font-size:14px"><a href="https://arnavjhajharia.github.io/shipcopy/">&larr; ShipCopy</a></p>
+<h1>App Store &quot;What&apos;s New&quot; from a changelog</h1>
+<p class="lead">You already have the facts in git. The store wants <b>benefit-first bullets</b>, under <b>4000 characters</b>, with no raw ticket IDs unless your users care.</p>
+<h2>Manual recipe (5 minutes)</h2>
+<ol>
+<li>Export commits since your last tag: <code>git log v1.2.0..HEAD --oneline</code></li>
+<li>Group by user-visible theme (fixes, new feature, performance).</li>
+<li>Rewrite each line as &quot;You can now…&quot; or &quot;Fixed…&quot; — drop merge commits and refactors.</li>
+<li>Paste into App Store Connect → What's New. Keep Play Store &quot;Release notes&quot; in sync (similar length).</li>
+</ol>
+<h2>Example output shape</h2>
+<pre>• Dark mode follows your system setting
+• Faster startup on older phones
+• Fixed crash when signing out offline</pre>
+<div class="box"><b>Automate the rewrite:</b> <a href="https://arnavjhajharia.github.io/shipcopy/">ShipCopy</a> takes a raw changelog and drafts What's New, markdown release notes, a launch post, and a meta description. Hybrid routing: on-device when Chrome supports Gemini Nano, cloud fallback via Firebase AI Logic.<br>
+<a class="cta" href="https://arnavjhajharia.github.io/shipcopy/">Open ShipCopy &rarr;</a></div>
+<h2>Also part of The Ship Kit</h2>
+<p><a href="https://arnavjhajharia.github.io/appshot/">AppShot</a> (store screenshots) · <a href="https://arnavjhajharia.github.io/favikit/">Favikit</a> (favicons) · <a href="https://arnavjhajharia.github.io/ogkit/">ogkit</a> (link preview images).</p>
+<footer>Checked 3 November 2026. Apple may change Connect limits; verify in App Store Connect help before submit. Written with AI assistance.</footer>
+</main></body></html>
