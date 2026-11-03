@@ -72,6 +72,33 @@ export function parseJsonLoose(text) {
 }
 
 /**
+ * Decode the string fields of a possibly-incomplete JSON object, e.g. '{"a":"hi","b":"wor'
+ * -> { a: "hi", b: "wor" }. Used to paint streaming output before the JSON closes.
+ */
+export function partialJsonStrings(text) {
+  const out = {};
+  const s = String(text || "");
+  const re = /"((?:[^"\\]|\\.)*)"\s*:\s*"/g;
+  let m;
+  while ((m = re.exec(s))) {
+    let key; try { key = JSON.parse('"' + m[1] + '"'); } catch (_) { continue; }
+    let i = re.lastIndex, raw = "", closed = false;
+    while (i < s.length) {
+      const c = s[i];
+      if (c === "\\") { if (i + 1 >= s.length) break; raw += c + s[i + 1]; i += 2; continue; }
+      if (c === '"') { closed = true; i++; break; }
+      raw += c; i++;
+    }
+    // drop a dangling partial escape like \u00 so JSON.parse succeeds
+    let val; const fix = closed ? raw : raw.replace(/\\u[0-9a-fA-F]{0,3}$/, "");
+    try { val = JSON.parse('"' + fix + '"'); } catch (_) { val = fix.replace(/\\n/g, "\n").replace(/\\"/g, '"'); }
+    out[key] = val;
+    re.lastIndex = i;
+  }
+  return out;
+}
+
+/**
  * Create an engine bound to the Firebase AI SDK (passed in so tests can mock it).
  * sdk = { initializeApp, getAI, getGenerativeModel, GoogleAIBackend }
  */
@@ -122,20 +149,44 @@ export function createEngine(sdk, { config, systemPrompt, jsonSchema, cloudModel
     await model(MODE.PREFER_ON_DEVICE).initializeDeviceModel(onProgress);
   }
 
-  async function generate(prompt, { policy = "auto", online = (win && typeof win.navigator?.onLine === "boolean") ? win.navigator.onLine : true } = {}) {
+  const now = () => (win && win.performance ? win.performance.now() : Date.now());
+  /**
+   * generate(prompt, { policy, online, onChunk })
+   * With onChunk, streams via generateContentStream and calls onChunk({ text, partial, firstMs })
+   * as text arrives (partial = fields decoded so far from the incomplete JSON).
+   */
+  async function generate(prompt, { policy = "auto", online = (win && typeof win.navigator?.onLine === "boolean") ? win.navigator.onLine : true, onChunk } = {}) {
     const avail = await availability();
     const estTokens = estimateTokens(prompt) + estimateTokens(systemPrompt);
     const route = chooseRoute({ policy, availability: avail, online, cloudConfigured, estTokens });
     if (route.error) { const e = new Error(route.error); e.route = route; e.availability = avail; throw e; }
-    const t0 = (win && win.performance ? win.performance.now() : Date.now());
-    const result = await model(route.mode).generateContent(prompt);
-    const ms = Math.round((win && win.performance ? win.performance.now() : Date.now()) - t0);
-    const text = result.response.text();
-    const src = result.response.inferenceSource; // 'on_device' | 'in_cloud'  (SDK >= 12.5)
+    const t0 = now();
+    const m = model(route.mode);
+    let text = "", src, firstMs = null, streamed = false;
+    if (typeof onChunk === "function" && typeof m.generateContentStream === "function") {
+      streamed = true;
+      const result = await m.generateContentStream(prompt);
+      for await (const chunk of result.stream) {
+        let t = ""; try { t = chunk.text(); } catch (_) {}
+        if (chunk.inferenceSource) src = chunk.inferenceSource;
+        if (!t) continue;
+        if (firstMs === null) firstMs = Math.round(now() - t0);
+        text += t;
+        const live = src === "on_device" ? "on-device" : src === "in_cloud" ? "cloud" : route.expect;
+        try { onChunk({ text, partial: partialJsonStrings(text), firstMs, route, backend: live }); } catch (_) {}
+      }
+      const resp = await result.response;
+      if (resp) { if (resp.inferenceSource) src = resp.inferenceSource; try { const full = resp.text(); if (full && full.length >= text.length) text = full; } catch (_) {} }
+    } else {
+      const result = await m.generateContent(prompt);
+      text = result.response.text();
+      src = result.response.inferenceSource; // 'on_device' | 'in_cloud'  (SDK >= 12.5)
+    }
+    const ms = Math.round(now() - t0);
     const backend = src === "on_device" ? "on-device" : src === "in_cloud" ? "cloud" : route.expect;
     let data = null, parseError = null;
     try { data = parseJsonLoose(text); } catch (e) { parseError = e.message; }
-    return { text, data, parseError, backend, route, availability: avail, ms, estTokens };
+    return { text, data, parseError, backend, route, availability: avail, ms, firstMs, streamed, estTokens };
   }
 
   return { availability, warmup, generate, cloudConfigured, estimateTokens, chooseRoute };

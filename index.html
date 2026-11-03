@@ -45,6 +45,14 @@
   .hint{font-size:13px;color:var(--muted);margin-top:8px}
   .empty{color:var(--muted);padding:26px 0;text-align:center}
   progress{width:100%;height:8px}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .card.live pre::after{content:"▍";color:var(--acc);animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .card .btns{display:inline-flex;gap:6px;align-items:center}
+  #hist{margin-top:16px;font-size:13px;color:var(--muted)} #hist summary{cursor:pointer}
+  #hist ul{list-style:none;padding:0;margin:8px 0} #hist li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+  #hist li button{background:none;border:0;color:var(--text);font:inherit;cursor:pointer;text-align:left;padding:0}
+  #hist li button:hover{color:var(--acc)}
   footer{max-width:900px;margin:40px auto 24px;padding:0 20px 18px;text-align:center;font:14px/1.6 system-ui,sans-serif;color:#9a9ab0}
 </style>
 </head>
@@ -93,9 +101,15 @@
   </section>
   <section class="panel" id="out">
     <div id="badgewrap" hidden><span class="badge" id="badge"></span></div>
-    <div class="empty" id="empty">Results appear here. Each block has its own copy button and character budget.</div>
+    <div class="empty" id="empty">Results stream in here. Each block has its own copy button, regenerate button and character budget.</div>
+    <div class="tools" id="tools" hidden>
+      <button class="btn sec copy" id="copyall">Copy all as markdown</button>
+      <button class="btn sec copy" id="dlmd">Download .md</button>
+    </div>
     <div id="cards"></div>
     <div class="err" id="err" hidden></div>
+    <details id="hist" hidden><summary>History on this device (<span id="hcount">0</span>)</summary><ul id="hlist"></ul>
+      <button class="btn sec copy" id="hclear">Clear history</button></details>
   </section>
 </main>
 <footer>
@@ -118,6 +132,7 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gst
 import { createEngine, estimateTokens } from "./hybrid.js";
 import { firebaseConfig } from "./firebase-config.js";
 import { importSinceLastRelease } from "./github.js";
+import { toMarkdown, regeneratePrompt, loadHistory, addHistory, updateHistory, clearHistory } from "./output.js";
 
 const $ = id => document.getElementById(id);
 const FIELDS = [
@@ -180,7 +195,7 @@ async function doImport(){
       if(r.version) $("version").value=r.version;
       const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
       const range=r.base?`<b>${esc(r.base)}</b> → <b>${esc(r.head)}</b>`:`the last ${r.lines.length} commits on <b>${esc(r.branch)}</b> (no tags yet)`;
-      importMsg(`Imported ${r.lines.length} change${r.lines.length>1?"s":""} from ${esc(r.owner+"/"+r.repo)}, ${range}${r.truncated?`  (newest ${r.lines.length} kept; ${r.total} commits in range)`:""}. Edit freely before generating; the writer leaves out chores and ticket IDs. Only the public commit list is read from GitHub; the copy is still written on-device when Gemini Nano is available.`);
+      importMsg(`Imported ${r.lines.length} change${r.lines.length>1?"s":""} from ${esc(r.owner+"/"+r.repo)}, ${range}${r.truncated?` (newest ${r.lines.length} kept; ${r.total} commits in range)`:""}. Edit freely before generating; the writer leaves out chores and ticket IDs. Only the public commit list is read from GitHub; the copy is still written on-device when Gemini Nano is available.`);
       updateTok();
     }
   } catch(e){ importMsg(e.message.replace(/[&<>]/g,""),true); }
@@ -199,30 +214,84 @@ $("warm").onclick=async()=>{
   clearInterval(poll); $("prog").hidden=true; $("warm").hidden=true; refreshStatus();
 };
 function showErr(m){ $("err").textContent=m; $("err").hidden=false; }
-function render(r){
-  $("empty").hidden=true; $("err").hidden=true;
+let cur=null; // { id, product, version, data, backend, ms, firstMs, route }
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function setBadge(r, live){
   const b=$("badge"); b.className="badge "+(r.backend==="on-device"?"device":"cloud");
-  b.innerHTML=(r.backend==="on-device"?"⚡ on-device · Gemini Nano":"☁ cloud · Gemini via Firebase AI Logic")+` <small>${r.ms} ms · ${r.route.reason}</small>`;
-  $("badgewrap").hidden=false;
-  const c=$("cards"); c.innerHTML="";
-  if(!r.data){ const d=document.createElement("div"); d.className="card"; d.innerHTML=`<h3>Raw output <em>(could not parse JSON: ${r.parseError})</em></h3><pre></pre>`; d.querySelector("pre").textContent=r.text; c.appendChild(d); return; }
+  const who=r.backend==="on-device"?"⚡ on-device · Gemini Nano":"☁ cloud · Gemini via Firebase AI Logic";
+  const t=live?(r.firstMs!=null?`streaming… first words in ${r.firstMs} ms`:"waiting for first words…"):`${r.firstMs!=null?`first words ${r.firstMs} ms · `:""}done ${r.ms} ms · ${esc(r.route.reason)}`;
+  b.innerHTML=`${who} <small>${t}</small>`; $("badgewrap").hidden=false;
+}
+function ensureCards(){
+  const c=$("cards"); if(c.querySelector(".card[data-k]")) return;
+  c.innerHTML="";
   for(const [k,title,limit] of FIELDS){
-    const v=(r.data[k]??"").toString().trim(); const over=v.length>limit;
-    const d=document.createElement("div"); d.className="card";
-    d.innerHTML=`<h3><span>${title}</span><span><em class="${over?"over":""}">${v.length}/${limit}</em> <button class="btn sec copy">Copy</button></span></h3><pre></pre>`;
-    d.querySelector("pre").textContent=v;
-    d.querySelector(".copy").onclick=ev=>{navigator.clipboard.writeText(v); ev.target.textContent="Copied ✓"; setTimeout(()=>ev.target.textContent="Copy",1200);};
+    const d=document.createElement("div"); d.className="card"; d.dataset.k=k;
+    d.innerHTML=`<h3><span>${title}</span><span class="btns"><em>0/${limit}</em><button class="btn sec copy regen" title="Write a different version of just this block">↻ Regenerate</button><button class="btn sec copy cp">Copy</button></span></h3><pre></pre>`;
+    d.querySelector(".cp").onclick=ev=>{navigator.clipboard.writeText(d.querySelector("pre").textContent); flash(ev.target,"Copied ✓");};
+    d.querySelector(".regen").onclick=()=>regen(k);
     c.appendChild(d);
   }
   const og=document.createElement("p"); og.className="hint"; og.innerHTML=`Need the matching social image? <a href="https://arnavjhajharia.github.io/ogkit/" target="_blank" rel="noopener">Make the OG card in ogkit →</a>`; c.appendChild(og);
 }
+function flash(el,t){ const o=el.textContent; el.textContent=t; setTimeout(()=>el.textContent=o,1200); }
+function setField(k,v,live){
+  const d=$("cards").querySelector(`.card[data-k="${k}"]`); if(!d) return;
+  const lim=FIELDS.find(f=>f[0]===k)[2]; v=String(v??"").trim();
+  d.querySelector("pre").textContent=v; d.classList.toggle("live",!!live);
+  const em=d.querySelector("em"); em.textContent=`${v.length}/${lim}`; em.className=v.length>lim?"over":"";
+}
+function paint(data,liveKey){ ensureCards(); for(const [k] of FIELDS) if(data[k]!=null) setField(k,data[k],k===liveKey); }
+function busy(on){ $("go").disabled=on; document.querySelectorAll(".regen").forEach(b=>b.disabled=on); }
+function render(r){
+  $("empty").hidden=true; $("err").hidden=true; setBadge(r,false);
+  if(!r.data){ const c=$("cards"); c.innerHTML=""; const d=document.createElement("div"); d.className="card"; d.innerHTML=`<h3>Raw output <em>(could not parse JSON: ${esc(r.parseError)})</em></h3><pre></pre>`; d.querySelector("pre").textContent=r.text; c.appendChild(d); $("tools").hidden=true; return; }
+  paint(r.data,null); $("tools").hidden=false;
+}
+function md(){ return cur?toMarkdown({product:cur.product,version:cur.version,data:cur.data,fields:FIELDS,backend:cur.backend}):""; }
+$("copyall").onclick=ev=>{ navigator.clipboard.writeText(md()); flash(ev.target,"Copied ✓"); };
+$("dlmd").onclick=()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([md()],{type:"text/markdown"})); a.download=`${(cur.product||"release").replace(/[^\w.-]+/g,"-")}-${cur.version||"notes"}-launch-copy.md`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); };
+// streaming partial JSON: the field being written is the last key seen
+function liveKeyOf(p){ const ks=Object.keys(p); return ks[ks.length-1]; }
 $("go").onclick=async()=>{
   if(!$("src").value.trim()){ showErr("Paste a changelog first (or click “Load sample”)."); return; }
-  $("go").disabled=true; $("go").textContent="Generating…"; $("err").hidden=true;
-  try { const r=await engine.generate(buildPrompt(),{policy:$("policy").value}); render(r); console.log("[ShipCopy]",r.backend,r.route,r.ms+"ms"); }
+  busy(true); $("go").textContent="Generating…"; $("err").hidden=true;
+  const product=$("product").value.trim(), version=$("version").value.trim();
+  try {
+    let first=true;
+    const r=await engine.generate(buildPrompt(),{policy:$("policy").value,onChunk:({partial,firstMs,backend})=>{
+      if(first){ first=false; $("empty").hidden=true; $("cards").innerHTML=""; $("tools").hidden=true; }
+      setBadge({backend,firstMs,route:{reason:""}},true); paint(partial,liveKeyOf(partial));
+    }});
+    render(r); console.log("[ShipCopy]",r.backend,r.route,`first ${r.firstMs}ms, done ${r.ms}ms, streamed=${r.streamed}`);
+    if(r.data){ const list=addHistory(localStorage,{product,version,data:r.data,backend:r.backend,ms:r.ms,firstMs:r.firstMs}); cur={...list[0],route:r.route}; drawHistory(list); }
+  }
   catch(e){ showErr(e.message); console.warn("[ShipCopy] generate failed",e); }
-  $("go").disabled=false; $("go").textContent="Generate launch copy"; refreshStatus();
+  busy(false); $("go").textContent="Generate launch copy"; refreshStatus();
 };
+async function regen(k){
+  if(!cur) return; const [,label,limit]=FIELDS.find(f=>f[0]===k);
+  busy(true); $("err").hidden=true; const old=cur.data[k];
+  try {
+    const r=await engine.generate(regeneratePrompt(buildPrompt(),{key:k,label,limit,current:cur.data}),{policy:$("policy").value,onChunk:({partial})=>{ if(partial[k]!=null) setField(k,partial[k],true); }});
+    const v=r.data&&r.data[k]; if(!v) throw new Error(r.parseError?`could not parse the rewrite (${r.parseError})`:"the model returned no text for that block");
+    cur.data={...cur.data,[k]:v}; setField(k,v,false); setBadge({...r},false);
+    drawHistory(updateHistory(localStorage,cur.id,{data:cur.data}));
+  } catch(e){ setField(k,old,false); showErr("Regenerate failed: "+e.message); }
+  busy(false);
+}
+function drawHistory(list=loadHistory(localStorage)){
+  $("hist").hidden=!list.length; $("hcount").textContent=list.length; const ul=$("hlist"); ul.innerHTML="";
+  for(const h of list){
+    const li=document.createElement("li"); const b=document.createElement("button");
+    b.textContent=`${h.product||"(unnamed)"} ${h.version||""}`.trim();
+    b.onclick=()=>{ cur={...h,route:{reason:"from history"}}; $("empty").hidden=true; $("cards").innerHTML=""; render({data:h.data,backend:h.backend,ms:h.ms,firstMs:h.firstMs,route:cur.route}); if(h.product) $("product").value=h.product; if(h.version) $("version").value=h.version; };
+    const t=document.createElement("span"); t.textContent=`${h.backend==="on-device"?"⚡":"☁"} ${new Date(h.at).toLocaleString([], {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}`;
+    li.append(b,t); ul.appendChild(li);
+  }
+}
+$("hclear").onclick=()=>drawHistory(clearHistory(localStorage));
+drawHistory();
 updateTok(); refreshStatus();
 window.__shipcopy={engine,refreshStatus};
 </script>
