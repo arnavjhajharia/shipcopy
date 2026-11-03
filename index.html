@@ -129,10 +129,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-ai.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js";
-import { createEngine, estimateTokens } from "./hybrid.js";
-import { firebaseConfig } from "./firebase-config.js";
-import { importSinceLastRelease } from "./github.js";
-import { toMarkdown, regeneratePrompt, loadHistory, addHistory, updateHistory, clearHistory } from "./output.js";
+import { createEngine, estimateTokens } from "./hybrid.js?v=3";
+import { firebaseConfig } from "./firebase-config.js?v=3";
+import { importSinceLastRelease } from "./github.js?v=3";
+import { toMarkdown, regeneratePrompt, loadHistory, addHistory, updateHistory, clearHistory } from "./output.js?v=3";
 
 const $ = id => document.getElementById(id);
 const FIELDS = [
