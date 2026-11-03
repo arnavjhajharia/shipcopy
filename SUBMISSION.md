@@ -1,5 +1,7 @@
 # Devpost submission draft — ShipCopy (#BuildHybridAI 2026)
 (Fill the real form on/after Nov 9 once the rules + required fields are public. Keep claims to what the live app does.)
+Verified 2026-11-03: cloud path live (Firebase AI Logic + Gemini + App Check enforced, 2.2 s for the sample). On-device path
+not yet verified on our hardware (disk gate).
 
 ## Tagline
 Paste a raw changelog, get store-ready launch copy — generated on your device, with a transparent cloud fallback.
@@ -22,7 +24,7 @@ Gemini in the cloud via Firebase AI Logic — and the app tells you which one an
 - Inference policy: Auto (hybrid), On-device only, Cloud only.
 
 ## How we built it
-Firebase JS SDK 13.2 (`firebase/ai`) with `getGenerativeModel(ai, { mode, inCloudParams, onDeviceParams })`.
+Firebase JS SDK 13.2 (`firebase/ai`, `firebase/app-check` with reCAPTCHA Enterprise — AI Logic enforces App Check) with `getGenerativeModel(ai, { mode, inCloudParams, onDeviceParams })`.
 A small pure routing module (`chooseRoute`) picks PREFER_ON_DEVICE / PREFER_IN_CLOUD / ONLY_* from: Prompt API
 availability, estimated tokens vs the on-device 9,216-token limit, online state, and whether cloud is configured.
 15 unit tests (node --test) cover the routing matrix and the engine with a mocked SDK. Zero build step, static hosting.
