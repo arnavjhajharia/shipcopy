@@ -16,7 +16,8 @@ them local, free and offline; cloud only when needed (>~6k tokens or no Nano).
 - hybrid.js — `chooseRoute()` (pure routing policy) + `createEngine()` (Firebase AI wrapper, SDK injected).
 - github.js — `importSinceLastRelease()`: public GitHub repo → commits since the latest release tag (fetch injected; `?repo=owner/repo` deep link).
 - firebase-config.js — `null` until the owner pastes the web config (cloud path). On-device still works without it.
-- test/router.test.mjs — `node --test test/` (24 tests: routing matrix, JSON parsing, engine with mocked SDK, GitHub importer with mocked fetch).
+- output.js — markdown export, single-block regenerate prompt, localStorage history (pure, storage injected).
+- test/router.test.mjs — `node --test test/` (31 tests: routing matrix, JSON + partial-JSON parsing, streaming engine with mocked SDK, markdown/history helpers, GitHub importer with mocked fetch).
 
 ## Judging criteria (from the Devpost page) → how we hit them
 - Technological implementation / hybrid use: real SDK modes, inferenceSource badge, download warm-up, structured JSON on both paths.

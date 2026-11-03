@@ -27,12 +27,18 @@ Gemini in the cloud via Firebase AI Logic — and the app tells you which one an
   merges and version-bump commits, and pre-fills product + next version. If nothing has landed since the latest
   release, it describes that release (previous tag → release tag). Only the public commit list is fetched; the copy is
   still written on-device when Gemini Nano is available.
+- **Streaming on both paths**: `generateContentStream` streams the JSON. A small partial-JSON decoder paints each block
+  as it is written, with a live cursor, so you watch the on-device or cloud model work. The badge shows time to first
+  words and total time (cloud, verified live: first words 1.9 s, done 2.6 s).
+- **Per-block regenerate**: ↻ on any block rewrites just that block (same facts, same tone). The other three stay as they are.
+- **Copy all as markdown / Download .md**: the whole kit as one release-notes file with character counts.
+- **History on this device**: the last 10 results live in localStorage (never uploaded). One click restores them.
 
 ## How we built it
 Firebase JS SDK 13.2 (`firebase/ai`, `firebase/app-check` with reCAPTCHA Enterprise — AI Logic enforces App Check) with `getGenerativeModel(ai, { mode, inCloudParams, onDeviceParams })`.
 A small pure routing module (`chooseRoute`) picks PREFER_ON_DEVICE / PREFER_IN_CLOUD / ONLY_* from: Prompt API
 availability, estimated tokens vs the on-device 9,216-token limit, online state, and whether cloud is configured.
-24 unit tests (node --test) cover the routing matrix, the engine with a mocked SDK and the GitHub importer with a mocked fetch. Zero build step, static hosting.
+31 unit tests (node --test) cover the routing matrix, the engine (streaming and non-streaming) with a mocked SDK, the partial-JSON decoder, markdown export, history and the GitHub importer with a mocked fetch. Zero build step, static hosting.
 
 ## Challenges
 On-device Gemini Nano is only present on some Chrome builds/hardware and needs a multi-minute first download, so the app
