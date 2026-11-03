@@ -131,7 +131,7 @@ async function refreshStatus(){
   const a = await engine.availability();
   if (a==="available") setDot("dev","ok","Gemini Nano ready (Chrome Prompt API)");
   else if (a==="downloadable") { setDot("dev","warn","model downloadable — click “Download on-device model”"); $("warm").hidden=false; }
-  else if (a==="downloading") { setDot("dev","warn","model downloading…"); }
+  else if (a==="downloading") { setDot("dev","warn","Gemini Nano downloading in the background (first time only, a few minutes)…"); $("warm").hidden=true; }
   else setDot("dev","bad","not available in this browser (Chrome 139+ desktop with built-in AI)");
   if (engine.cloudConfigured) setDot("cloud","ok","Firebase AI Logic → Gemini (fallback)");
   else setDot("cloud","bad","not configured (firebase-config.js) — on-device only");
@@ -158,9 +158,11 @@ PB-412: widgets now show the current month instead of last synced month`;
 };
 $("warm").onclick=async()=>{
   $("warm").disabled=true; $("prog").hidden=false;
-  try { await engine.warmup(p=>{ $("prog").value=p; setDot("dev","warn",`downloading model… ${Math.round(p*100)}%`); }); }
+  $("prog").removeAttribute("value"); // indeterminate until Chrome reports progress
+  const poll=setInterval(refreshStatus,5000);
+  try { await engine.warmup(p=>{ if(p>0){ $("prog").value=p; setDot("dev","warn",`downloading model… ${Math.round(p*100)}%`); } }); }
   catch(e){ showErr("Model download failed: "+e.message); }
-  $("prog").hidden=true; $("warm").hidden=true; refreshStatus();
+  clearInterval(poll); $("prog").hidden=true; $("warm").hidden=true; refreshStatus();
 };
 function showErr(m){ $("err").textContent=m; $("err").hidden=false; }
 function render(r){
