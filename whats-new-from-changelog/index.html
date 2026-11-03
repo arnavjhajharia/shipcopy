@@ -17,10 +17,30 @@ h1{font-size:34px;line-height:1.2;margin:0 0 10px}h2{font-size:24px;margin:38px 
 .cta{display:inline-block;background:var(--acc);color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:10px;margin:8px 0}
 .box{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#12131c;margin:22px 0}
 footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:48px;padding-top:16px}
+.verified{font-size:14px;color:var(--muted);margin:0 0 22px;padding:10px 14px;border-left:3px solid var(--acc);background:#12131c}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:15px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:#161826}
+.checklist{list-style:none;padding:0;margin:16px 0}.checklist li{margin:10px 0;padding-left:28px;position:relative}
+.checklist li::before{content:"☐";position:absolute;left:0;color:var(--acc);font-weight:700}
 </style></head><body><main>
 <p style="margin:0 0 18px;font-size:14px"><a href="https://arnavjhajharia.github.io/shipcopy/">&larr; ShipCopy</a></p>
-<h1>App Store &quot;What&apos;s New&quot; from a changelog</h1>
-<p class="lead">You already have the facts in git. The store wants <b>benefit-first bullets</b>, under <b>4000 characters</b>, with no raw ticket IDs unless your users care.</p>
+<h1>What&apos;s New from a changelog (2026)</h1>
+<p class="lead">You already have the facts in git. App Store Connect wants <b>benefit-first bullets</b>, under <b>4000 characters</b>, with no raw ticket IDs unless your users care.</p>
+<p class="verified"><time datetime="2026-11-03">Last verified 3 November 2026</time> against <a href="https://developer.apple.com/help/app-store-connect/reference/app-information/">App Store Connect app information</a> (What&apos;s New field). Draft walkthrough: <a href="https://github.com/arnavjhajharia/shipcopy/blob/main/posts/whats-new-from-changelog.md">dev.to post #4 in queue</a>.</p>
+<h2>Quick reference</h2>
+<table><tr><th>Field</th><th>Limit / rule</th></tr>
+<tr><td>App Store What&apos;s New</td><td><b>4000</b> characters; lead with user-visible changes</td></tr>
+<tr><td>Google Play release notes</td><td>Similar tone; keep facts aligned with iOS</td></tr>
+<tr><td>Git input</td><td><code>git log v1.2.0..HEAD --oneline</code> — rewrite subjects, drop merge noise</td></tr>
+<tr><td>Tone</td><td>&quot;You can now…&quot; / &quot;Fixed…&quot; — not ticket IDs or refactors</td></tr></table>
+<h2>Before you paste into App Store Connect</h2>
+<ul class="checklist">
+<li>Every bullet describes something a user can <b>see or feel</b> (not &quot;refactored auth module&quot;).</li>
+<li>Character count ≤ <b>4000</b> (Connect truncates silently in previews).</li>
+<li>Play Store release notes tell the same story (wording can differ slightly).</li>
+<li>Remove internal codenames, commit hashes, and &quot;misc improvements&quot; filler.</li>
+<li>Proofread on a phone — most reviewers read What&apos;s New on mobile.</li>
+</ul>
 <h2>Manual recipe (5 minutes)</h2>
 <ol>
 <li>Export commits since your last tag: <code>git log v1.2.0..HEAD --oneline</code></li>
