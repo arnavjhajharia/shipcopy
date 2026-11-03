@@ -79,6 +79,10 @@ export function createEngine(sdk, { config, systemPrompt, jsonSchema, cloudModel
   const cloudConfigured = !!(config && config.apiKey && config.projectId);
   // A placeholder app is enough for on-device-only use; cloud calls are gated by chooseRoute().
   const app = sdk.initializeApp(cloudConfigured ? config : { apiKey: "unconfigured", projectId: "unconfigured", appId: "unconfigured" });
+  // Optional Firebase App Check (reCAPTCHA Enterprise). AI Logic enforces it by default on new projects.
+  if (cloudConfigured && config.appCheckSiteKey && sdk.initializeAppCheck && sdk.ReCaptchaEnterpriseProvider) {
+    sdk.initializeAppCheck(app, { provider: new sdk.ReCaptchaEnterpriseProvider(config.appCheckSiteKey), isTokenAutoRefreshEnabled: true });
+  }
   const ai = sdk.getAI(app, { backend: new sdk.GoogleAIBackend() });
   const createOptions = {
     expectedInputs: [{ type: "text", languages: ["en"] }],

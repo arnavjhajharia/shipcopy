@@ -107,6 +107,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-ai.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js";
 import { createEngine, estimateTokens } from "./hybrid.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -125,7 +126,7 @@ const SYSTEM = `You write concise launch copy for software releases. You are giv
 Never invent features that are not in the changelog. Keep the requested tone.`;
 const SCHEMA = { type: "object", properties: Object.fromEntries(FIELDS.map(([k]) => [k, { type: "string" }])), required: FIELDS.map(([k]) => k) };
 
-const engine = createEngine({ initializeApp, getAI, getGenerativeModel, GoogleAIBackend }, { config: firebaseConfig, systemPrompt: SYSTEM, jsonSchema: SCHEMA });
+const engine = createEngine({ initializeApp, getAI, getGenerativeModel, GoogleAIBackend, initializeAppCheck, ReCaptchaEnterpriseProvider }, { config: firebaseConfig, systemPrompt: SYSTEM, jsonSchema: SCHEMA });
 
 function setDot(id, cls, text){ const d=$("d-"+id); d.className="dot "+cls; $("s-"+id).textContent=text; }
 async function refreshStatus(){

@@ -3,6 +3,7 @@
 // Web config values are public by design (they identify the app, they don't authorise it).
 // Abuse limits: restrict this key to the GitHub Pages referrer in the Firebase/GCP console + App Check.
 export const firebaseConfig = {
+  appCheckSiteKey: "6Lc4dg0uAAAAALTwETHUdsxqBuLm-kOL8Pa5s-ek", // reCAPTCHA Enterprise site key (public), domain arnavjhajharia.github.io
   apiKey: "AIzaSyBBhJ0_N1I40DU60nLPRJKn8AvpnjS2tO8",
   authDomain: "shipcopy-49268.firebaseapp.com",
   projectId: "shipcopy-49268",
